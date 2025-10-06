@@ -1,26 +1,117 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { ComponentData, CustomFunctionProps } from '../../types';
-import { AlertTriangle, Code } from 'lucide-react';
+import { AlertTriangle, Code, RefreshCw } from 'lucide-react';
+import { useAppStore } from '../../store/useAppStore';
 
 interface CustomFunctionComponentProps {
   component: ComponentData;
   isPreview?: boolean;
 }
 
-export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({ 
-  component, 
-  isPreview = false 
+export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
+  component,
+  isPreview = false
 }) => {
   const props = component.props as CustomFunctionProps;
+  const { components, apis, sqlQueries, globalState, updateGlobalState, updateComponent } = useAppStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [localState, setLocalState] = useState<Record<string, unknown>>({});
+  const executionContextRef = useRef<Record<string, unknown>>({});
 
   const baseStyle: React.CSSProperties = {
     width: '100%',
     height: '100%',
     ...component.style,
   };
+
+  // Create the execution context with access to all app data
+  const createExecutionContext = useCallback(() => {
+    const context: Record<string, unknown> = {
+      // Component's own props
+      props: props.props || {},
+
+      // Local state for this custom function
+      state: localState,
+      setState: (updates: Record<string, unknown>) => {
+        setLocalState(prev => ({ ...prev, ...updates }));
+      },
+
+      // Global app state
+      appsmith: {
+        store: globalState,
+        updateStore: (key: string, value: unknown) => {
+          updateGlobalState(key, value);
+        }
+      },
+
+      // Access to all components
+      components: {},
+
+      // Access to all APIs
+      apis: {},
+
+      // Access to all SQL queries
+      queries: {},
+
+      // Utility functions
+      utils: {
+        showAlert: (message: string) => alert(message),
+        navigateTo: (url: string) => window.location.href = url,
+        copyToClipboard: (text: string) => {
+          navigator.clipboard.writeText(text);
+        },
+        downloadData: (data: unknown, filename: string) => {
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      }
+    };
+
+    // Build component references
+    components.forEach(comp => {
+      context.components[comp.id] = {
+        id: comp.id,
+        type: comp.type,
+        props: comp.props,
+        update: (updates: Record<string, unknown>) => {
+          updateComponent(comp.id, { props: { ...comp.props, ...updates } });
+        }
+      };
+    });
+
+    // Build API references
+    apis.forEach(api => {
+      context.apis[api.id] = {
+        id: api.id,
+        name: api.name,
+        data: api.response?.body || null,
+        response: api.response,
+        isLoading: api.isLoading || false,
+        error: api.error || null
+      };
+    });
+
+    // Build SQL query references
+    sqlQueries.forEach(query => {
+      context.queries[query.id] = {
+        id: query.id,
+        name: query.name,
+        data: query.result || null,
+        isLoading: query.isLoading || false,
+        error: query.error || null
+      };
+    });
+
+    executionContextRef.current = context;
+    return context;
+  }, [components, apis, sqlQueries, globalState, localState, props.props, updateGlobalState, updateComponent]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -43,6 +134,11 @@ export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
         wrapper.style.height = '100%';
         wrapper.style.position = 'relative';
         wrapper.style.overflow = isPreview ? 'hidden' : 'auto';
+        wrapper.className = `custom-function-${component.id}`;
+        wrapper.setAttribute('data-component-id', component.id);
+
+        // Create execution context
+        const context = createExecutionContext();
 
         if (props.html) {
           wrapper.innerHTML = props.html;
@@ -59,23 +155,39 @@ export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
             }
           `;
           wrapper.appendChild(style);
-          wrapper.className = `custom-function-${component.id}`;
         }
 
         if (props.javascript) {
           const script = document.createElement('script');
+          // Inject the context into the script
+          const contextVars = Object.keys(context).map(key =>
+            `const ${key} = __context__.${key};`
+          ).join('\n');
+
           script.textContent = `
             (function() {
               try {
-                const props = ${JSON.stringify(props.props || {})};
-                const componentId = '${component.id}';
+                // Inject context
+                const __context__ = ${JSON.stringify(context)};
+                ${contextVars}
 
+                // Make setState reactive
+                const setState = function(updates) {
+                  Object.assign(state, updates);
+                  // Trigger re-render by dispatching custom event
+                  window.dispatchEvent(new CustomEvent('custom-function-update-${component.id}', {
+                    detail: { componentId: '${component.id}', state: updates }
+                  }));
+                };
+
+                // User's custom code
                 ${props.javascript}
+
               } catch (error) {
                 console.error('Custom function error:', error);
                 const errorDiv = document.createElement('div');
-                errorDiv.style.cssText = 'color: red; padding: 10px; background: #fee; border: 1px solid #fcc; border-radius: 4px; font-size: 12px;';
-                errorDiv.textContent = 'JavaScript Error: ' + error.message;
+                errorDiv.style.cssText = 'color: #ef4444; padding: 12px; background: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; font-size: 13px; margin: 8px; font-family: monospace;';
+                errorDiv.innerHTML = '<strong>⚠ JavaScript Error:</strong><br>' + error.message + '<br><br><small>Check the console for more details.</small>';
                 document.querySelector('.custom-function-${component.id}').appendChild(errorDiv);
               }
             })();
@@ -96,7 +208,7 @@ export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
     if (props.html || props.css || props.javascript) {
       executeCustomCode();
     }
-  }, [props.html, props.css, props.javascript, props.props, component.id, isPreview]);
+  }, [props.html, props.css, props.javascript, props.props, component.id, isPreview, components, apis, sqlQueries, globalState, localState, createExecutionContext]);
 
   const getCustomStyles = () => {
     const styles: React.CSSProperties = {};
