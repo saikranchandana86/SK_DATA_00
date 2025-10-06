@@ -1,15 +1,100 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { Settings, Palette, Code, ChevronDown, ChevronRight, Plus, Trash2, Maximize2, X, Eye, RefreshCw } from 'lucide-react';
 import { ActionConfig } from '../../types';
 import { CodeEditor } from '../editors/CodeEditor';
 import { ChartSeriesEditor } from '../editors/ChartSeriesEditor';
 
+const LivePreview: React.FC<{ html: string; css: string; javascript: string; previewKey: number; onRefresh: () => void }> = ({ html, css, javascript, previewKey, onRefresh }) => {
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!previewRef.current) return;
+
+    previewRef.current.innerHTML = '';
+
+    const wrapper = document.createElement('div');
+    wrapper.style.width = '100%';
+    wrapper.style.height = '100%';
+    wrapper.style.position = 'relative';
+    wrapper.style.overflow = 'auto';
+    wrapper.className = 'custom-preview-wrapper';
+
+    if (html) {
+      wrapper.innerHTML = html;
+    }
+
+    if (css) {
+      const style = document.createElement('style');
+      style.textContent = `.custom-preview-wrapper { ${css} }`;
+      wrapper.appendChild(style);
+    }
+
+    if (javascript) {
+      const script = document.createElement('script');
+      script.textContent = `
+        (function() {
+          try {
+            ${javascript}
+          } catch (error) {
+            console.error('Preview error:', error);
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'color: #ef4444; padding: 12px; background: #fee; border: 1px solid #fcc; border-radius: 6px; font-size: 13px; margin: 8px;';
+            errorDiv.innerHTML = '<strong>JavaScript Error:</strong> ' + error.message;
+            document.querySelector('.custom-preview-wrapper').appendChild(errorDiv);
+          }
+        })();
+      `;
+      wrapper.appendChild(script);
+    }
+
+    previewRef.current.appendChild(wrapper);
+  }, [html, css, javascript, previewKey]);
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-750 border-b border-gray-700">
+        <div className="flex items-center gap-2">
+          <Eye className="w-4 h-4 text-green-400" />
+          <span className="text-sm font-medium text-white">Live Preview</span>
+        </div>
+        <button
+          onClick={onRefresh}
+          className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+          title="Refresh preview"
+        >
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      </div>
+      <div
+        ref={previewRef}
+        className="flex-1 overflow-auto bg-white"
+        key={previewKey}
+      />
+    </div>
+  );
+};
+
 export const PropertiesPanel: React.FC = () => {
   const { selectedComponent, updateComponent, apis, sqlQueries, deleteComponent, selectComponent } = useAppStore();
   const [activeTab, setActiveTab] = useState<'content' | 'style' | 'actions'>('content');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic', 'general']));
   const [codeEditorModal, setCodeEditorModal] = useState<{ isOpen: boolean; type: 'html' | 'css' | 'javascript' | null; value: string; }>({ isOpen: false, type: null, value: '' });
+  const [activeEditorTab, setActiveEditorTab] = useState<'html' | 'css' | 'javascript'>('html');
+  const [liveCode, setLiveCode] = useState({ html: '', css: '', javascript: '' });
+  const [previewKey, setPreviewKey] = useState(0);
+
+  React.useEffect(() => {
+    if (codeEditorModal.isOpen && selectedComponent) {
+      setActiveEditorTab(codeEditorModal.type || 'html');
+      setLiveCode({
+        html: selectedComponent.props.html || '',
+        css: selectedComponent.props.css || '',
+        javascript: selectedComponent.props.javascript || ''
+      });
+      setPreviewKey(0);
+    }
+  }, [codeEditorModal.isOpen, codeEditorModal.type, selectedComponent]);
 
   if (!selectedComponent) {
     return (
@@ -930,21 +1015,13 @@ export const PropertiesPanel: React.FC = () => {
     );
   };
 
+  const updateLiveCode = (type: 'html' | 'css' | 'javascript', value: string) => {
+    setLiveCode(prev => ({ ...prev, [type]: value }));
+    setPreviewKey(prev => prev + 1);
+  };
+
   const renderCodeEditorModal = () => {
     if (!codeEditorModal.isOpen) return null;
-
-    const [activeEditorTab, setActiveEditorTab] = React.useState<'html' | 'css' | 'javascript'>(codeEditorModal.type || 'html');
-    const [liveCode, setLiveCode] = React.useState({
-      html: selectedComponent.props.html || '',
-      css: selectedComponent.props.css || '',
-      javascript: selectedComponent.props.javascript || ''
-    });
-    const [previewKey, setPreviewKey] = React.useState(0);
-
-    const updateLiveCode = (type: 'html' | 'css' | 'javascript', value: string) => {
-      setLiveCode(prev => ({ ...prev, [type]: value }));
-      setPreviewKey(prev => prev + 1);
-    };
 
     const tabConfig = [
       { id: 'html' as const, label: 'HTML', icon: Code, color: 'text-orange-400', bgColor: 'bg-orange-500/10' },
@@ -953,76 +1030,6 @@ export const PropertiesPanel: React.FC = () => {
     ];
 
     const currentTabConfig = tabConfig.find(t => t.id === activeEditorTab) || tabConfig[0];
-
-    const renderLivePreview = () => {
-      const previewRef = React.useRef<HTMLDivElement>(null);
-
-      React.useEffect(() => {
-        if (!previewRef.current) return;
-
-        previewRef.current.innerHTML = '';
-
-        const wrapper = document.createElement('div');
-        wrapper.style.width = '100%';
-        wrapper.style.height = '100%';
-        wrapper.style.position = 'relative';
-        wrapper.style.overflow = 'auto';
-        wrapper.className = 'custom-preview-wrapper';
-
-        if (liveCode.html) {
-          wrapper.innerHTML = liveCode.html;
-        }
-
-        if (liveCode.css) {
-          const style = document.createElement('style');
-          style.textContent = `.custom-preview-wrapper { ${liveCode.css} }`;
-          wrapper.appendChild(style);
-        }
-
-        if (liveCode.javascript) {
-          const script = document.createElement('script');
-          script.textContent = `
-            (function() {
-              try {
-                ${liveCode.javascript}
-              } catch (error) {
-                console.error('Preview error:', error);
-                const errorDiv = document.createElement('div');
-                errorDiv.style.cssText = 'color: #ef4444; padding: 12px; background: #fee; border: 1px solid #fcc; border-radius: 6px; font-size: 13px; margin: 8px;';
-                errorDiv.innerHTML = '<strong>JavaScript Error:</strong> ' + error.message;
-                document.querySelector('.custom-preview-wrapper').appendChild(errorDiv);
-              }
-            })();
-          `;
-          wrapper.appendChild(script);
-        }
-
-        previewRef.current.appendChild(wrapper);
-      }, [previewKey]);
-
-      return (
-        <div className="h-full flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-750 border-b border-gray-700">
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-green-400" />
-              <span className="text-sm font-medium text-white">Live Preview</span>
-            </div>
-            <button
-              onClick={() => setPreviewKey(prev => prev + 1)}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
-              title="Refresh preview"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
-          <div
-            ref={previewRef}
-            className="flex-1 overflow-auto bg-white"
-            key={previewKey}
-          />
-        </div>
-      );
-    };
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -1106,7 +1113,13 @@ export const PropertiesPanel: React.FC = () => {
 
             {/* Right Side: Live Preview */}
             <div className="w-1/2 flex flex-col">
-              {renderLivePreview()}
+              <LivePreview
+                html={liveCode.html}
+                css={liveCode.css}
+                javascript={liveCode.javascript}
+                previewKey={previewKey}
+                onRefresh={() => setPreviewKey(prev => prev + 1)}
+              />
             </div>
           </div>
 
