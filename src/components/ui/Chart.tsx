@@ -170,19 +170,8 @@ export const Chart: React.FC<ChartComponentProps> = ({ component }) => {
     return max;
   }, [evaluatedSeries]);
 
-  // Update reference properties whenever data changes
-  useEffect(() => {
-    updateComponent(component.id, {
-      props: {
-        ...props,
-        // Reference properties
-        chartData: evaluatedSeries,
-        selectedDataPoint: selectedDataPoint,
-        xAxisName: props.xAxisName,
-        yAxisName: props.yAxisName
-      }
-    });
-  }, [evaluatedSeries, selectedDataPoint]);
+  // Note: We don't need to update component props with evaluated data
+  // as it would cause infinite re-render loops
 
   const handleDataPointClick = (point: DataPoint, seriesIndex: number) => {
     setSelectedDataPoint(point);
