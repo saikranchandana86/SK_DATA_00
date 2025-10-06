@@ -16,9 +16,9 @@ export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const baseStyle = {
+  const baseStyle: React.CSSProperties = {
     width: '100%',
-    height: props.height ? `${props.height}px` : '100%',
+    height: '100%',
     ...component.style,
   };
 
@@ -112,19 +112,19 @@ export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
 
   if (!isPreview) {
     return (
-      <div 
+      <div
         style={{ ...baseStyle, ...getCustomStyles() }}
-        className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-dashed border-purple-300 rounded-lg flex items-center justify-center text-purple-600"
+        className="bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center text-slate-600"
       >
         <div className="text-center p-4">
           <Code className="w-8 h-8 mx-auto mb-2" />
-          <div className="font-medium">Custom Function</div>
+          <div className="font-medium text-lg">Custom Function</div>
           <div className="text-sm mt-1 opacity-75">Preview to see output</div>
           {(props.html || props.css || props.javascript) && (
-            <div className="text-xs mt-2 space-y-1">
-              {props.html && <div>✓ HTML</div>}
-              {props.css && <div>✓ CSS</div>}
-              {props.javascript && <div>✓ JavaScript</div>}
+            <div className="text-xs mt-3 space-y-1 bg-white/50 rounded-lg p-2">
+              {props.html && <div className="flex items-center justify-center gap-1"><span className="text-green-600">✓</span> HTML ({props.html.split('\n').length} lines)</div>}
+              {props.css && <div className="flex items-center justify-center gap-1"><span className="text-green-600">✓</span> CSS ({props.css.split('\n').length} lines)</div>}
+              {props.javascript && <div className="flex items-center justify-center gap-1"><span className="text-green-600">✓</span> JavaScript ({props.javascript.split('\n').length} lines)</div>}
             </div>
           )}
         </div>
@@ -177,10 +177,10 @@ export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
       style={{ ...baseStyle, ...getCustomStyles() }}
-      className={`custom-function-container overflow-hidden ${props.animateLoading ? 'animate-pulse' : ''}`}
+      className={`custom-function-container overflow-auto ${props.animateLoading ? 'animate-pulse' : ''}`}
     />
   );
 };

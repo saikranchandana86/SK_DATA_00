@@ -133,7 +133,7 @@ export const DraggableComponent: React.FC<DraggableComponentProps> = ({
         componentRef.current = node;
         drag(node);
       }}
-      className={`absolute transition-all duration-200 ${
+      className={`absolute ${isResizing || isDragging ? '' : 'transition-all duration-200'} ${
         isSelected ? 'ring-2 ring-blue-500 ring-opacity-75 shadow-lg' : ''
       } ${isDragSource ? 'opacity-50' : ''} ${isDragging ? 'cursor-move' : 'cursor-pointer'}`}
       style={{

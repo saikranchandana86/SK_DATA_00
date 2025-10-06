@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { Settings, Palette, Code, ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { Settings, Palette, Code, ChevronDown, ChevronRight, Plus, Trash2, Maximize2, X } from 'lucide-react';
 import { ActionConfig } from '../../types';
 import { CodeEditor } from '../editors/CodeEditor';
 import { ChartSeriesEditor } from '../editors/ChartSeriesEditor';
@@ -9,6 +9,7 @@ export const PropertiesPanel: React.FC = () => {
   const { selectedComponent, updateComponent, apis, sqlQueries, deleteComponent, selectComponent } = useAppStore();
   const [activeTab, setActiveTab] = useState<'content' | 'style' | 'actions'>('content');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic', 'general']));
+  const [codeEditorModal, setCodeEditorModal] = useState<{ isOpen: boolean; type: 'html' | 'css' | 'javascript' | null; value: string; }>({ isOpen: false, type: null, value: '' });
 
   if (!selectedComponent) {
     return (
@@ -544,47 +545,61 @@ export const PropertiesPanel: React.FC = () => {
       case 'customfunction':
         return (
           <div className="space-y-4">
-            {renderSection('HTML', 'html', (
-              <div>
-                <CodeEditor
-                  value={props.html || ''}
-                  onChange={(value) => handlePropertyChange('html', value)}
-                  language="html"
-                  height={200}
-                  label="HTML Code"
-                  placeholder="<!-- Write your HTML here -->"
-                />
-              </div>
-            ))}
+            {renderSection('Code', 'code', (
+              <div className="space-y-3">
+                <button
+                  onClick={() => setCodeEditorModal({ isOpen: true, type: 'html', value: props.html || '' })}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors border border-gray-600 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-500/10 rounded-lg">
+                      <Code className="w-5 h-5 text-orange-400" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-medium text-white">HTML</div>
+                      <div className="text-xs text-gray-400">
+                        {props.html ? `${props.html.split('\n').length} lines` : 'No HTML code'}
+                      </div>
+                    </div>
+                  </div>
+                  <Maximize2 className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                </button>
 
-            {renderSection('CSS', 'css', (
-              <div>
-                <CodeEditor
-                  value={props.css || ''}
-                  onChange={(value) => handlePropertyChange('css', value)}
-                  language="css"
-                  height={200}
-                  label="CSS Code"
-                  placeholder="/* Write your CSS here */"
-                />
-              </div>
-            ))}
+                <button
+                  onClick={() => setCodeEditorModal({ isOpen: true, type: 'css', value: props.css || '' })}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors border border-gray-600 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                      <Palette className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-medium text-white">CSS</div>
+                      <div className="text-xs text-gray-400">
+                        {props.css ? `${props.css.split('\n').length} lines` : 'No CSS code'}
+                      </div>
+                    </div>
+                  </div>
+                  <Maximize2 className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                </button>
 
-            {renderSection('JavaScript', 'javascript', (
-              <div>
-                <CodeEditor
-                  value={props.javascript || ''}
-                  onChange={(value) => handlePropertyChange('javascript', value)}
-                  language="javascript"
-                  height={250}
-                  label="JavaScript Code"
-                  placeholder="// Write your JavaScript code here
-// You can access:
-// - props: component props
-// - componentId: unique component identifier
-// - APIs: {{apiName.data}}
-// - Queries: {{queryName.data}}"
-                />
+                <button
+                  onClick={() => setCodeEditorModal({ isOpen: true, type: 'javascript', value: props.javascript || '' })}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors border border-gray-600 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-500/10 rounded-lg">
+                      <Code className="w-5 h-5 text-yellow-400" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-medium text-white">JavaScript</div>
+                      <div className="text-xs text-gray-400">
+                        {props.javascript ? `${props.javascript.split('\n').length} lines` : 'No JavaScript code'}
+                      </div>
+                    </div>
+                  </div>
+                  <Maximize2 className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                </button>
               </div>
             ))}
 
@@ -897,8 +912,97 @@ export const PropertiesPanel: React.FC = () => {
     );
   };
 
+  const renderCodeEditorModal = () => {
+    if (!codeEditorModal.isOpen || !codeEditorModal.type) return null;
+
+    const languageConfig = {
+      html: { label: 'HTML Code', placeholder: '<!-- Write your HTML here -->', icon: Code, color: 'orange' },
+      css: { label: 'CSS Code', placeholder: '/* Write your CSS here */', icon: Palette, color: 'blue' },
+      javascript: {
+        label: 'JavaScript Code',
+        placeholder: `// Write your JavaScript code here
+// You can access:
+// - props: component props
+// - componentId: unique component identifier
+// - APIs: {{apiName.data}}
+// - Queries: {{queryName.data}}`,
+        icon: Code,
+        color: 'yellow'
+      }
+    };
+
+    const config = languageConfig[codeEditorModal.type];
+    const Icon = config.icon;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        <div className="w-[90vw] h-[85vh] bg-gray-800 rounded-xl shadow-2xl flex flex-col border border-gray-700">
+          {/* Modal Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 bg-${config.color}-500/10 rounded-lg`}>
+                <Icon className={`w-5 h-5 text-${config.color}-400`} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">{config.label}</h3>
+                <p className="text-sm text-gray-400">Custom Function Component</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                handlePropertyChange(codeEditorModal.type!, codeEditorModal.value);
+                setCodeEditorModal({ isOpen: false, type: null, value: '' });
+              }}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Editor Content */}
+          <div className="flex-1 p-6 overflow-hidden">
+            <CodeEditor
+              value={codeEditorModal.value}
+              onChange={(value) => setCodeEditorModal({ ...codeEditorModal, value })}
+              language={codeEditorModal.type}
+              height="100%"
+              placeholder={config.placeholder}
+            />
+          </div>
+
+          {/* Modal Footer */}
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-700 bg-gray-750">
+            <div className="text-sm text-gray-400">
+              {codeEditorModal.value.split('\n').length} lines • {codeEditorModal.value.length} characters
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setCodeEditorModal({ isOpen: false, type: null, value: '' })}
+                className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handlePropertyChange(codeEditorModal.type!, codeEditorModal.value);
+                  setCodeEditorModal({ isOpen: false, type: null, value: '' });
+                }}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="h-full flex flex-col bg-gray-800">
+    <>
+      {renderCodeEditorModal()}
+      <div className="h-full flex flex-col bg-gray-800">
       {/* Header */}
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-center justify-between mb-4">
@@ -965,5 +1069,6 @@ export const PropertiesPanel: React.FC = () => {
         {activeTab === 'actions' && renderActionsEditor()}
       </div>
     </div>
+    </>
   );
 };

@@ -235,9 +235,9 @@ export const componentDefinitions: ComponentDefinition[] = [
     icon: 'Code',
     category: 'display',
     defaultProps: {
-      html: '<div class="custom-widget">\n  <h3>Custom Widget</h3>\n  <p>Edit HTML, CSS, and JavaScript in properties</p>\n</div>',
-      css: '.custom-widget {\n  padding: 20px;\n  background: #f0f0f0;\n  border-radius: 8px;\n}',
-      javascript: '// Custom JavaScript\nconsole.log("Custom widget initialized");',
+      html: '<div class="custom-widget">\n  <h2 class="title">Custom Widget</h2>\n  <p class="description">Click "Edit Code" to customize this component</p>\n  <button class="action-btn" onclick="handleClick()">Click Me</button>\n  <div id="output"></div>\n</div>',
+      css: '.custom-widget {\n  padding: 24px;\n  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n  border-radius: 12px;\n  color: white;\n  font-family: system-ui, -apple-system, sans-serif;\n}\n\n.title {\n  margin: 0 0 12px 0;\n  font-size: 24px;\n  font-weight: 600;\n}\n\n.description {\n  margin: 0 0 16px 0;\n  opacity: 0.9;\n}\n\n.action-btn {\n  padding: 10px 20px;\n  background: white;\n  color: #667eea;\n  border: none;\n  border-radius: 8px;\n  font-weight: 600;\n  cursor: pointer;\n  transition: transform 0.2s;\n}\n\n.action-btn:hover {\n  transform: scale(1.05);\n}\n\n#output {\n  margin-top: 16px;\n  padding: 12px;\n  background: rgba(255, 255, 255, 0.1);\n  border-radius: 8px;\n  min-height: 20px;\n}',
+      javascript: '// Custom JavaScript\nfunction handleClick() {\n  const output = document.getElementById("output");\n  const now = new Date().toLocaleTimeString();\n  output.innerHTML = `<strong>Clicked at:</strong> ${now}`;\n  console.log("Button clicked at:", now);\n}\n\nconsole.log("Custom widget initialized successfully!");',
       visible: true,
       animateLoading: false,
       height: 200
