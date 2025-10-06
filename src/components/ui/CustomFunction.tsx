@@ -23,29 +23,31 @@ export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
   };
 
   useEffect(() => {
-    if (!containerRef.current || !isPreview) return;
+    if (!containerRef.current) return;
+
+    const targetElement = isPreview
+      ? containerRef.current
+      : containerRef.current.querySelector('.custom-function-canvas-preview');
+
+    if (!targetElement) return;
 
     const executeCustomCode = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        // Clear previous content
-        containerRef.current!.innerHTML = '';
+        targetElement.innerHTML = '';
 
-        // Create a sandboxed container for the custom component
         const wrapper = document.createElement('div');
         wrapper.style.width = '100%';
         wrapper.style.height = '100%';
         wrapper.style.position = 'relative';
-        wrapper.style.overflow = 'hidden';
+        wrapper.style.overflow = isPreview ? 'hidden' : 'auto';
 
-        // Inject HTML
         if (props.html) {
           wrapper.innerHTML = props.html;
         }
 
-        // Inject CSS with scoping
         if (props.css) {
           const style = document.createElement('style');
           style.textContent = `
@@ -60,17 +62,14 @@ export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
           wrapper.className = `custom-function-${component.id}`;
         }
 
-        // Inject JavaScript with error handling
         if (props.javascript) {
           const script = document.createElement('script');
           script.textContent = `
             (function() {
               try {
-                // Provide access to component props
                 const props = ${JSON.stringify(props.props || {})};
                 const componentId = '${component.id}';
-                
-                // Execute custom JavaScript
+
                 ${props.javascript}
               } catch (error) {
                 console.error('Custom function error:', error);
@@ -84,7 +83,7 @@ export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
           wrapper.appendChild(script);
         }
 
-        containerRef.current.appendChild(wrapper);
+        targetElement.appendChild(wrapper);
 
       } catch (error) {
         console.error('Error rendering custom function:', error);
@@ -94,7 +93,9 @@ export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
       }
     };
 
-    executeCustomCode();
+    if (props.html || props.css || props.javascript) {
+      executeCustomCode();
+    }
   }, [props.html, props.css, props.javascript, props.props, component.id, isPreview]);
 
   const getCustomStyles = () => {
@@ -111,23 +112,39 @@ export const CustomFunction: React.FC<CustomFunctionComponentProps> = ({
   if (!props.visible) return null;
 
   if (!isPreview) {
+    const hasCode = props.html || props.css || props.javascript;
     return (
       <div
+        ref={containerRef}
         style={{ ...baseStyle, ...getCustomStyles() }}
-        className="bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center text-slate-600"
+        className="bg-gradient-to-br from-gray-800 to-gray-700 border-2 border-dashed border-gray-500 rounded-lg overflow-hidden"
       >
-        <div className="text-center p-4">
-          <Code className="w-8 h-8 mx-auto mb-2" />
-          <div className="font-medium text-lg">Custom Function</div>
-          <div className="text-sm mt-1 opacity-75">Preview to see output</div>
-          {(props.html || props.css || props.javascript) && (
-            <div className="text-xs mt-3 space-y-1 bg-white/50 rounded-lg p-2">
-              {props.html && <div className="flex items-center justify-center gap-1"><span className="text-green-600">✓</span> HTML ({props.html.split('\n').length} lines)</div>}
-              {props.css && <div className="flex items-center justify-center gap-1"><span className="text-green-600">✓</span> CSS ({props.css.split('\n').length} lines)</div>}
-              {props.javascript && <div className="flex items-center justify-center gap-1"><span className="text-green-600">✓</span> JavaScript ({props.javascript.split('\n').length} lines)</div>}
+        {hasCode ? (
+          <div className="h-full flex flex-col">
+            {/* Preview Header */}
+            <div className="bg-gray-900/50 px-3 py-2 border-b border-gray-600 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Code className="w-4 h-4 text-blue-400" />
+                <span className="text-xs font-medium text-gray-300">Custom Function</span>
+              </div>
+              <div className="flex items-center gap-1">
+                {props.html && <span className="text-xs px-1.5 py-0.5 bg-orange-500/20 text-orange-400 rounded">HTML</span>}
+                {props.css && <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded">CSS</span>}
+                {props.javascript && <span className="text-xs px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded">JS</span>}
+              </div>
             </div>
-          )}
-        </div>
+            {/* Canvas Preview Content */}
+            <div className="flex-1 overflow-auto custom-function-canvas-preview" />
+          </div>
+        ) : (
+          <div className="h-full flex items-center justify-center text-gray-400">
+            <div className="text-center p-4">
+              <Code className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <div className="font-medium text-base">Custom Function</div>
+              <div className="text-xs mt-1 opacity-75">Click to add HTML, CSS, or JS</div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

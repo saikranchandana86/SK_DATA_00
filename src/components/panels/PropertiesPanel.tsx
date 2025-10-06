@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { Settings, Palette, Code, ChevronDown, ChevronRight, Plus, Trash2, Maximize2, X } from 'lucide-react';
+import { Settings, Palette, Code, ChevronDown, ChevronRight, Plus, Trash2, Maximize2, X, Eye, RefreshCw } from 'lucide-react';
 import { ActionConfig } from '../../types';
 import { CodeEditor } from '../editors/CodeEditor';
 import { ChartSeriesEditor } from '../editors/ChartSeriesEditor';
@@ -549,16 +549,19 @@ export const PropertiesPanel: React.FC = () => {
               <div className="space-y-3">
                 <button
                   onClick={() => setCodeEditorModal({ isOpen: true, type: 'html', value: props.html || '' })}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors border border-gray-600 group"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 rounded-lg transition-all border border-gray-600 group shadow-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-orange-500/10 rounded-lg">
+                    <div className="p-2 bg-orange-500/20 rounded-lg group-hover:bg-orange-500/30 transition-colors">
                       <Code className="w-5 h-5 text-orange-400" />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-white">HTML</div>
+                      <div className="text-sm font-semibold text-white flex items-center gap-2">
+                        HTML
+                        <span className="text-xs px-2 py-0.5 bg-orange-500/20 rounded-full text-orange-300">Split View</span>
+                      </div>
                       <div className="text-xs text-gray-400">
-                        {props.html ? `${props.html.split('\n').length} lines` : 'No HTML code'}
+                        {props.html ? `${props.html.split('\n').length} lines • Live preview` : 'Click to add HTML'}
                       </div>
                     </div>
                   </div>
@@ -567,16 +570,19 @@ export const PropertiesPanel: React.FC = () => {
 
                 <button
                   onClick={() => setCodeEditorModal({ isOpen: true, type: 'css', value: props.css || '' })}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors border border-gray-600 group"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 rounded-lg transition-all border border-gray-600 group shadow-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                    <div className="p-2 bg-blue-500/20 rounded-lg group-hover:bg-blue-500/30 transition-colors">
                       <Palette className="w-5 h-5 text-blue-400" />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-white">CSS</div>
+                      <div className="text-sm font-semibold text-white flex items-center gap-2">
+                        CSS
+                        <span className="text-xs px-2 py-0.5 bg-blue-500/20 rounded-full text-blue-300">Split View</span>
+                      </div>
                       <div className="text-xs text-gray-400">
-                        {props.css ? `${props.css.split('\n').length} lines` : 'No CSS code'}
+                        {props.css ? `${props.css.split('\n').length} lines • Live preview` : 'Click to add CSS'}
                       </div>
                     </div>
                   </div>
@@ -585,21 +591,33 @@ export const PropertiesPanel: React.FC = () => {
 
                 <button
                   onClick={() => setCodeEditorModal({ isOpen: true, type: 'javascript', value: props.javascript || '' })}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors border border-gray-600 group"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 rounded-lg transition-all border border-gray-600 group shadow-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-yellow-500/10 rounded-lg">
+                    <div className="p-2 bg-yellow-500/20 rounded-lg group-hover:bg-yellow-500/30 transition-colors">
                       <Code className="w-5 h-5 text-yellow-400" />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-white">JavaScript</div>
+                      <div className="text-sm font-semibold text-white flex items-center gap-2">
+                        JavaScript
+                        <span className="text-xs px-2 py-0.5 bg-yellow-500/20 rounded-full text-yellow-300">Split View</span>
+                      </div>
                       <div className="text-xs text-gray-400">
-                        {props.javascript ? `${props.javascript.split('\n').length} lines` : 'No JavaScript code'}
+                        {props.javascript ? `${props.javascript.split('\n').length} lines • Live preview` : 'Click to add JavaScript'}
                       </div>
                     </div>
                   </div>
                   <Maximize2 className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
                 </button>
+
+                <div className="mt-4 p-3 bg-gradient-to-r from-blue-500/10 to-green-500/10 border border-blue-500/20 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <Eye className="w-4 h-4 text-blue-400 mt-0.5" />
+                    <div className="text-xs text-gray-300">
+                      <span className="font-semibold text-white">Advanced Editor:</span> Write code on the left, see live preview on the right. Changes update instantly!
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
 
@@ -913,84 +931,212 @@ export const PropertiesPanel: React.FC = () => {
   };
 
   const renderCodeEditorModal = () => {
-    if (!codeEditorModal.isOpen || !codeEditorModal.type) return null;
+    if (!codeEditorModal.isOpen) return null;
 
-    const languageConfig = {
-      html: { label: 'HTML Code', placeholder: '<!-- Write your HTML here -->', icon: Code, color: 'orange' },
-      css: { label: 'CSS Code', placeholder: '/* Write your CSS here */', icon: Palette, color: 'blue' },
-      javascript: {
-        label: 'JavaScript Code',
-        placeholder: `// Write your JavaScript code here
-// You can access:
-// - props: component props
-// - componentId: unique component identifier
-// - APIs: {{apiName.data}}
-// - Queries: {{queryName.data}}`,
-        icon: Code,
-        color: 'yellow'
-      }
+    const [activeEditorTab, setActiveEditorTab] = React.useState<'html' | 'css' | 'javascript'>(codeEditorModal.type || 'html');
+    const [liveCode, setLiveCode] = React.useState({
+      html: selectedComponent.props.html || '',
+      css: selectedComponent.props.css || '',
+      javascript: selectedComponent.props.javascript || ''
+    });
+    const [previewKey, setPreviewKey] = React.useState(0);
+
+    const updateLiveCode = (type: 'html' | 'css' | 'javascript', value: string) => {
+      setLiveCode(prev => ({ ...prev, [type]: value }));
+      setPreviewKey(prev => prev + 1);
     };
 
-    const config = languageConfig[codeEditorModal.type];
-    const Icon = config.icon;
+    const tabConfig = [
+      { id: 'html' as const, label: 'HTML', icon: Code, color: 'text-orange-400', bgColor: 'bg-orange-500/10' },
+      { id: 'css' as const, label: 'CSS', icon: Palette, color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
+      { id: 'javascript' as const, label: 'JavaScript', icon: Code, color: 'text-yellow-400', bgColor: 'bg-yellow-500/10' }
+    ];
+
+    const currentTabConfig = tabConfig.find(t => t.id === activeEditorTab) || tabConfig[0];
+
+    const renderLivePreview = () => {
+      const previewRef = React.useRef<HTMLDivElement>(null);
+
+      React.useEffect(() => {
+        if (!previewRef.current) return;
+
+        previewRef.current.innerHTML = '';
+
+        const wrapper = document.createElement('div');
+        wrapper.style.width = '100%';
+        wrapper.style.height = '100%';
+        wrapper.style.position = 'relative';
+        wrapper.style.overflow = 'auto';
+        wrapper.className = 'custom-preview-wrapper';
+
+        if (liveCode.html) {
+          wrapper.innerHTML = liveCode.html;
+        }
+
+        if (liveCode.css) {
+          const style = document.createElement('style');
+          style.textContent = `.custom-preview-wrapper { ${liveCode.css} }`;
+          wrapper.appendChild(style);
+        }
+
+        if (liveCode.javascript) {
+          const script = document.createElement('script');
+          script.textContent = `
+            (function() {
+              try {
+                ${liveCode.javascript}
+              } catch (error) {
+                console.error('Preview error:', error);
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'color: #ef4444; padding: 12px; background: #fee; border: 1px solid #fcc; border-radius: 6px; font-size: 13px; margin: 8px;';
+                errorDiv.innerHTML = '<strong>JavaScript Error:</strong> ' + error.message;
+                document.querySelector('.custom-preview-wrapper').appendChild(errorDiv);
+              }
+            })();
+          `;
+          wrapper.appendChild(script);
+        }
+
+        previewRef.current.appendChild(wrapper);
+      }, [previewKey]);
+
+      return (
+        <div className="h-full flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-750 border-b border-gray-700">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-green-400" />
+              <span className="text-sm font-medium text-white">Live Preview</span>
+            </div>
+            <button
+              onClick={() => setPreviewKey(prev => prev + 1)}
+              className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+              title="Refresh preview"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
+          <div
+            ref={previewRef}
+            className="flex-1 overflow-auto bg-white"
+            key={previewKey}
+          />
+        </div>
+      );
+    };
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div className="w-[90vw] h-[85vh] bg-gray-800 rounded-xl shadow-2xl flex flex-col border border-gray-700">
+        <div className="w-[95vw] h-[90vh] bg-gray-800 rounded-xl shadow-2xl flex flex-col border border-gray-700">
           {/* Modal Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
             <div className="flex items-center gap-3">
-              <div className={`p-2 bg-${config.color}-500/10 rounded-lg`}>
-                <Icon className={`w-5 h-5 text-${config.color}-400`} />
+              <div className="p-2 bg-gradient-to-br from-blue-500/20 to-green-500/20 rounded-lg">
+                <Code className="w-5 h-5 text-blue-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">{config.label}</h3>
-                <p className="text-sm text-gray-400">Custom Function Component</p>
+                <h3 className="text-lg font-semibold text-white">Custom Function Editor</h3>
+                <p className="text-sm text-gray-400">Split-view code editor with live preview</p>
               </div>
             </div>
             <button
               onClick={() => {
-                handlePropertyChange(codeEditorModal.type!, codeEditorModal.value);
+                handlePropertyChange('html', liveCode.html);
+                handlePropertyChange('css', liveCode.css);
+                handlePropertyChange('javascript', liveCode.javascript);
                 setCodeEditorModal({ isOpen: false, type: null, value: '' });
               }}
               className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-              title="Close"
+              title="Close and save"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Editor Content */}
-          <div className="flex-1 p-6 overflow-hidden">
-            <CodeEditor
-              value={codeEditorModal.value}
-              onChange={(value) => setCodeEditorModal({ ...codeEditorModal, value })}
-              language={codeEditorModal.type}
-              height="100%"
-              placeholder={config.placeholder}
-            />
+          {/* Main Content: Split View */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Left Side: Code Editor */}
+            <div className="w-1/2 flex flex-col border-r border-gray-700">
+              {/* Code Tabs */}
+              <div className="flex items-center gap-1 px-4 py-2 bg-gray-750 border-b border-gray-700">
+                {tabConfig.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveEditorTab(tab.id)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        activeEditorTab === tab.id
+                          ? `${tab.bgColor} ${tab.color}`
+                          : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {tab.label}
+                      {liveCode[tab.id] && (
+                        <span className="text-xs opacity-60">({liveCode[tab.id].split('\n').length})</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Code Editor Area */}
+              <div className="flex-1 overflow-hidden">
+                <CodeEditor
+                  value={liveCode[activeEditorTab]}
+                  onChange={(value) => updateLiveCode(activeEditorTab, value)}
+                  language={activeEditorTab}
+                  height="100%"
+                  placeholder={activeEditorTab === 'html' ? '<!-- Write your HTML here -->' : activeEditorTab === 'css' ? '/* Write your CSS here */' : '// Write your JavaScript here'}
+                />
+              </div>
+
+              {/* Editor Stats */}
+              <div className="px-4 py-2 bg-gray-750 border-t border-gray-700 flex items-center justify-between text-xs text-gray-400">
+                <div className="flex items-center gap-4">
+                  <span>{liveCode[activeEditorTab].split('\n').length} lines</span>
+                  <span>{liveCode[activeEditorTab].length} characters</span>
+                </div>
+                <div className={`flex items-center gap-1 ${currentTabConfig.color}`}>
+                  <div className="w-2 h-2 rounded-full bg-current"></div>
+                  <span>{currentTabConfig.label}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side: Live Preview */}
+            <div className="w-1/2 flex flex-col">
+              {renderLivePreview()}
+            </div>
           </div>
 
           {/* Modal Footer */}
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-700 bg-gray-750">
-            <div className="text-sm text-gray-400">
-              {codeEditorModal.value.split('\n').length} lines • {codeEditorModal.value.length} characters
+            <div className="flex items-center gap-4 text-sm text-gray-400">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span>Live preview active</span>
+              </div>
+              <span>•</span>
+              <span>Total: {(liveCode.html + liveCode.css + liveCode.javascript).length} chars</span>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setCodeEditorModal({ isOpen: false, type: null, value: '' })}
-                className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+                className="px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => {
-                  handlePropertyChange(codeEditorModal.type!, codeEditorModal.value);
+                  handlePropertyChange('html', liveCode.html);
+                  handlePropertyChange('css', liveCode.css);
+                  handlePropertyChange('javascript', liveCode.javascript);
                   setCodeEditorModal({ isOpen: false, type: null, value: '' });
                 }}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white rounded-lg transition-all font-medium shadow-lg"
               >
-                Save Changes
+                Save All Changes
               </button>
             </div>
           </div>
