@@ -4,6 +4,7 @@ import { Settings, Palette, Code, ChevronDown, ChevronRight, Plus, Trash2, Maxim
 import { ActionConfig } from '../../types';
 import { CodeEditor } from '../editors/CodeEditor';
 import { ChartSeriesEditor } from '../editors/ChartSeriesEditor';
+import Editor from '@monaco-editor/react';
 
 const LivePreview: React.FC<{ html: string; css: string; javascript: string; previewKey: number; onRefresh: () => void }> = ({ html, css, javascript, previewKey, onRefresh }) => {
   const previewRef = useRef<HTMLDivElement>(null);
@@ -53,7 +54,7 @@ const LivePreview: React.FC<{ html: string; css: string; javascript: string; pre
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-750 border-b border-gray-700">
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700 flex-shrink-0">
         <div className="flex items-center gap-2">
           <Eye className="w-4 h-4 text-green-400" />
           <span className="text-sm font-medium text-white">Live Preview</span>
@@ -68,7 +69,7 @@ const LivePreview: React.FC<{ html: string; css: string; javascript: string; pre
       </div>
       <div
         ref={previewRef}
-        className="flex-1 overflow-auto bg-white"
+        className="flex-1 overflow-auto bg-white min-h-0"
         key={previewKey}
       />
     </div>
@@ -1032,10 +1033,10 @@ export const PropertiesPanel: React.FC = () => {
     const currentTabConfig = tabConfig.find(t => t.id === activeEditorTab) || tabConfig[0];
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div className="w-[95vw] h-[90vh] bg-gray-800 rounded-xl shadow-2xl flex flex-col border border-gray-700">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div className="w-[95vw] h-[90vh] bg-gray-900 rounded-xl shadow-2xl flex flex-col border border-gray-700">
           {/* Modal Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 bg-gray-800">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-blue-500/20 to-green-500/20 rounded-lg">
                 <Code className="w-5 h-5 text-blue-400" />
@@ -1060,11 +1061,11 @@ export const PropertiesPanel: React.FC = () => {
           </div>
 
           {/* Main Content: Split View */}
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex overflow-hidden min-h-0">
             {/* Left Side: Code Editor */}
-            <div className="w-1/2 flex flex-col border-r border-gray-700">
+            <div className="w-1/2 flex flex-col border-r border-gray-700 bg-gray-900 min-h-0">
               {/* Code Tabs */}
-              <div className="flex items-center gap-1 px-4 py-2 bg-gray-750 border-b border-gray-700">
+              <div className="flex items-center gap-1 px-4 py-2 bg-gray-800 border-b border-gray-700 flex-shrink-0">
                 {tabConfig.map((tab) => {
                   const Icon = tab.icon;
                   return (
@@ -1088,18 +1089,41 @@ export const PropertiesPanel: React.FC = () => {
               </div>
 
               {/* Code Editor Area */}
-              <div className="flex-1 overflow-hidden">
-                <CodeEditor
-                  value={liveCode[activeEditorTab]}
-                  onChange={(value) => updateLiveCode(activeEditorTab, value)}
-                  language={activeEditorTab}
+              <div className="flex-1 overflow-hidden min-h-0 bg-[#1e1e1e]">
+                <Editor
                   height="100%"
-                  placeholder={activeEditorTab === 'html' ? '<!-- Write your HTML here -->' : activeEditorTab === 'css' ? '/* Write your CSS here */' : '// Write your JavaScript here'}
+                  defaultLanguage={activeEditorTab}
+                  language={activeEditorTab}
+                  value={liveCode[activeEditorTab]}
+                  onChange={(value) => updateLiveCode(activeEditorTab, value || '')}
+                  theme="vs-dark"
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    lineNumbers: 'on',
+                    roundedSelection: true,
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    tabSize: 2,
+                    wordWrap: 'on',
+                    quickSuggestions: true,
+                    suggestOnTriggerCharacters: true,
+                    contextmenu: true,
+                    folding: true,
+                    lineDecorationsWidth: 10,
+                    lineNumbersMinChars: 3,
+                    renderLineHighlight: 'line'
+                  }}
+                  loading={
+                    <div className="flex items-center justify-center h-full bg-[#1e1e1e]">
+                      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  }
                 />
               </div>
 
               {/* Editor Stats */}
-              <div className="px-4 py-2 bg-gray-750 border-t border-gray-700 flex items-center justify-between text-xs text-gray-400">
+              <div className="px-4 py-2 bg-gray-800 border-t border-gray-700 flex items-center justify-between text-xs text-gray-400 flex-shrink-0">
                 <div className="flex items-center gap-4">
                   <span>{liveCode[activeEditorTab].split('\n').length} lines</span>
                   <span>{liveCode[activeEditorTab].length} characters</span>
@@ -1112,7 +1136,7 @@ export const PropertiesPanel: React.FC = () => {
             </div>
 
             {/* Right Side: Live Preview */}
-            <div className="w-1/2 flex flex-col">
+            <div className="w-1/2 flex flex-col bg-gray-900 min-h-0">
               <LivePreview
                 html={liveCode.html}
                 css={liveCode.css}
@@ -1124,7 +1148,7 @@ export const PropertiesPanel: React.FC = () => {
           </div>
 
           {/* Modal Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-700 bg-gray-750">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-700 bg-gray-800 flex-shrink-0">
             <div className="flex items-center gap-4 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
