@@ -95,7 +95,7 @@ export const PropertiesPanel: React.FC = () => {
       });
       setPreviewKey(0);
     }
-  }, [codeEditorModal.isOpen, codeEditorModal.type, selectedComponent]);
+  }, [codeEditorModal.isOpen, codeEditorModal.type]);
 
   if (!selectedComponent) {
     return (
@@ -1048,9 +1048,16 @@ export const PropertiesPanel: React.FC = () => {
             </div>
             <button
               onClick={() => {
-                handlePropertyChange('html', liveCode.html);
-                handlePropertyChange('css', liveCode.css);
-                handlePropertyChange('javascript', liveCode.javascript);
+                if (selectedComponent) {
+                  updateComponent(selectedComponent.id, {
+                    props: {
+                      ...selectedComponent.props,
+                      html: liveCode.html,
+                      css: liveCode.css,
+                      javascript: liveCode.javascript
+                    }
+                  });
+                }
                 setCodeEditorModal({ isOpen: false, type: null, value: '' });
               }}
               className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
@@ -1166,9 +1173,17 @@ export const PropertiesPanel: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  handlePropertyChange('html', liveCode.html);
-                  handlePropertyChange('css', liveCode.css);
-                  handlePropertyChange('javascript', liveCode.javascript);
+                  if (selectedComponent) {
+                    console.log('Saving custom function code:', { html: liveCode.html.length, css: liveCode.css.length, js: liveCode.javascript.length });
+                    updateComponent(selectedComponent.id, {
+                      props: {
+                        ...selectedComponent.props,
+                        html: liveCode.html,
+                        css: liveCode.css,
+                        javascript: liveCode.javascript
+                      }
+                    });
+                  }
                   setCodeEditorModal({ isOpen: false, type: null, value: '' });
                 }}
                 className="px-6 py-2 bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white rounded-lg transition-all font-medium shadow-lg"
